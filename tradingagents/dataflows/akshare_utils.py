@@ -7,6 +7,7 @@ AKShare数据源工具
 import pandas as pd
 from typing import Optional, Dict, Any
 import warnings
+from datetime import datetime
 
 # 导入日志模块
 from tradingagents.utils.logging_manager import get_logger
@@ -324,6 +325,89 @@ class AKShareProvider:
 
         return clean_symbol
 
+    def get_financial_data(self, symbol: str) -> Dict[str, Any]:
+        """
+        获取股票财务数据
+        
+        Args:
+            symbol: 股票代码 (6位数字)
+            
+        Returns:
+            Dict: 包含主要财务指标的财务数据
+        """
+        if not self.connected:
+            logger.error(f"❌ AKShare未连接，无法获取{symbol}财务数据")
+            return {}
+        
+        try:
+            logger.info(f"🔍 开始获取{symbol}的AKShare财务数据")
+            
+            financial_data = {}
+            
+            # 1. 优先获取主要财务指标
+            try:
+                logger.debug(f"📊 尝试获取{symbol}主要财务指标...")
+                main_indicators = self.ak.stock_financial_abstract(symbol=symbol)
+                if main_indicators is not None and not main_indicators.empty:
+                    financial_data['main_indicators'] = main_indicators
+                    logger.info(f"✅ 成功获取{symbol}主要财务指标: {len(main_indicators)}条记录")
+                    logger.debug(f"主要财务指标列名: {list(main_indicators.columns)}")
+                else:
+                    logger.warning(f"⚠️ {symbol}主要财务指标为空")
+            except Exception as e:
+                logger.warning(f"❌ 获取{symbol}主要财务指标失败: {e}")
+            
+            # 2. 尝试获取资产负债表（可能失败，降级为debug日志）
+            try:
+                logger.debug(f"📊 尝试获取{symbol}资产负债表...")
+                balance_sheet = self.ak.stock_balance_sheet_by_report_em(symbol=symbol)
+                if balance_sheet is not None and not balance_sheet.empty:
+                    financial_data['balance_sheet'] = balance_sheet
+                    logger.debug(f"✅ 成功获取{symbol}资产负债表: {len(balance_sheet)}条记录")
+                else:
+                    logger.debug(f"⚠️ {symbol}资产负债表为空")
+            except Exception as e:
+                logger.debug(f"❌ 获取{symbol}资产负债表失败: {e}")
+            
+            # 3. 尝试获取利润表（可能失败，降级为debug日志）
+            try:
+                logger.debug(f"📊 尝试获取{symbol}利润表...")
+                income_statement = self.ak.stock_profit_sheet_by_report_em(symbol=symbol)
+                if income_statement is not None and not income_statement.empty:
+                    financial_data['income_statement'] = income_statement
+                    logger.debug(f"✅ 成功获取{symbol}利润表: {len(income_statement)}条记录")
+                else:
+                    logger.debug(f"⚠️ {symbol}利润表为空")
+            except Exception as e:
+                logger.debug(f"❌ 获取{symbol}利润表失败: {e}")
+            
+            # 4. 尝试获取现金流量表（可能失败，降级为debug日志）
+            try:
+                logger.debug(f"📊 尝试获取{symbol}现金流量表...")
+                cash_flow = self.ak.stock_cash_flow_sheet_by_report_em(symbol=symbol)
+                if cash_flow is not None and not cash_flow.empty:
+                    financial_data['cash_flow'] = cash_flow
+                    logger.debug(f"✅ 成功获取{symbol}现金流量表: {len(cash_flow)}条记录")
+                else:
+                    logger.debug(f"⚠️ {symbol}现金流量表为空")
+            except Exception as e:
+                logger.debug(f"❌ 获取{symbol}现金流量表失败: {e}")
+            
+            # 记录最终结果
+            if financial_data:
+                logger.info(f"✅ AKShare财务数据获取完成: {symbol}, 包含{len(financial_data)}个数据集")
+                for key, value in financial_data.items():
+                    if hasattr(value, '__len__'):
+                        logger.info(f"  - {key}: {len(value)}条记录")
+            else:
+                logger.warning(f"⚠️ 未能获取{symbol}的任何AKShare财务数据")
+            
+            return financial_data
+            
+        except Exception as e:
+            logger.error(f"❌ AKShare获取{symbol}财务数据失败: {e}")
+            return {}
+
 def get_akshare_provider() -> AKShareProvider:
     """获取AKShare提供器实例"""
     return AKShareProvider()
@@ -455,3 +539,87 @@ def format_hk_stock_data_akshare(symbol: str, data: pd.DataFrame, start_date: st
     except Exception as e:
         logger.error(f"❌ 格式化AKShare港股数据失败: {e}")
         return f"❌ AKShare港股数据格式化失败: {symbol}"
+
+
+def get_stock_news_em(symbol: str) -> pd.DataFrame:
+    """
+    使用AKShare获取东方财富个股新闻
+
+    Args:
+        symbol: 股票代码，如 "600000" 或 "300059"
+
+    Returns:
+        pd.DataFrame: 包含新闻标题、内容、日期和链接的DataFrame
+    """
+    start_time = datetime.now()
+    logger.info(f"[东方财富新闻] 开始获取股票 {symbol} 的东方财富新闻数据")
+    
+    try:
+        provider = get_akshare_provider()
+        if not provider.connected:
+            logger.error(f"[东方财富新闻] ❌ AKShare未连接，无法获取东方财富新闻")
+            return pd.DataFrame()
+
+        logger.info(f"[东方财富新闻] 📰 准备调用AKShare API获取个股新闻: {symbol}")
+
+        # 使用线程超时包装（兼容Windows）
+        import threading
+        import time
+
+        result = [None]
+        exception = [None]
+
+        def fetch_news():
+            try:
+                logger.debug(f"[东方财富新闻] 线程开始执行 stock_news_em API调用: {symbol}")
+                thread_start = time.time()
+                result[0] = provider.ak.stock_news_em(symbol=symbol)
+                thread_end = time.time()
+                logger.debug(f"[东方财富新闻] 线程执行完成，耗时: {thread_end - thread_start:.2f}秒")
+            except Exception as e:
+                logger.error(f"[东方财富新闻] 线程执行异常: {e}")
+                exception[0] = e
+
+        # 启动线程
+        thread = threading.Thread(target=fetch_news)
+        thread.daemon = True
+        logger.debug(f"[东方财富新闻] 启动线程获取新闻数据")
+        thread.start()
+
+        # 等待30秒
+        logger.debug(f"[东方财富新闻] 等待线程完成，最长等待30秒")
+        thread.join(timeout=30)
+
+        if thread.is_alive():
+            # 超时了
+            elapsed_time = (datetime.now() - start_time).total_seconds()
+            logger.warning(f"[东方财富新闻] ⚠️ 获取超时（30秒）: {symbol}，总耗时: {elapsed_time:.2f}秒")
+            raise Exception(f"东方财富个股新闻获取超时（30秒）: {symbol}")
+        elif exception[0]:
+            # 有异常
+            elapsed_time = (datetime.now() - start_time).total_seconds()
+            logger.error(f"[东方财富新闻] ❌ API调用异常: {exception[0]}，总耗时: {elapsed_time:.2f}秒")
+            raise exception[0]
+        else:
+            # 成功
+            news_df = result[0]
+
+        if news_df is not None and not news_df.empty:
+            news_count = len(news_df)
+            elapsed_time = (datetime.now() - start_time).total_seconds()
+            
+            # 记录一些新闻标题示例
+            sample_titles = [row.get('标题', '无标题') for _, row in news_df.head(3).iterrows()]
+            logger.info(f"[东方财富新闻] 新闻标题示例: {', '.join(sample_titles)}")
+            
+            logger.info(f"[东方财富新闻] ✅ 获取成功: {symbol}, 共{news_count}条记录，耗时: {elapsed_time:.2f}秒")
+            return news_df
+        else:
+            elapsed_time = (datetime.now() - start_time).total_seconds()
+            logger.warning(f"[东方财富新闻] ⚠️ 数据为空: {symbol}，API返回成功但无数据，耗时: {elapsed_time:.2f}秒")
+            return pd.DataFrame()
+
+    except Exception as e:
+        elapsed_time = (datetime.now() - start_time).total_seconds()
+        logger.error(f"[东方财富新闻] ❌ 获取失败: {symbol}, 错误: {e}, 耗时: {elapsed_time:.2f}秒")
+        return pd.DataFrame()

@@ -31,21 +31,50 @@ class ChromaDBManager:
     def __init__(self):
         if not self._initialized:
             try:
-                # 使用更兼容的ChromaDB配置
-                settings = Settings(
-                    allow_reset=True,
-                    anonymized_telemetry=False,
-                    is_persistent=False
-                )
-                self._client = chromadb.Client(settings)
+                # 自动检测操作系统版本并使用最优配置
+                import platform
+                system = platform.system()
+                
+                if system == "Windows":
+                    # 使用改进的Windows 11检测
+                    from .chromadb_win11_config import is_windows_11
+                    if is_windows_11():
+                        # Windows 11 或更新版本，使用优化配置
+                        from .chromadb_win11_config import get_win11_chromadb_client
+                        self._client = get_win11_chromadb_client()
+                        logger.info(f"📚 [ChromaDB] Windows 11优化配置初始化完成 (构建号: {platform.version()})")
+                    else:
+                        # Windows 10 或更老版本，使用兼容配置
+                        from .chromadb_win10_config import get_win10_chromadb_client
+                        self._client = get_win10_chromadb_client()
+                        logger.info(f"📚 [ChromaDB] Windows 10兼容配置初始化完成")
+                else:
+                    # 非Windows系统，使用标准配置
+                    settings = Settings(
+                        allow_reset=True,
+                        anonymized_telemetry=False,
+                        is_persistent=False
+                    )
+                    self._client = chromadb.Client(settings)
+                    logger.info(f"📚 [ChromaDB] {system}标准配置初始化完成")
+                
                 self._initialized = True
-                logger.info(f"📚 [ChromaDB] 单例管理器初始化完成")
             except Exception as e:
                 logger.error(f"❌ [ChromaDB] 初始化失败: {e}")
                 # 使用最简单的配置作为备用
-                self._client = chromadb.Client()
+                try:
+                    settings = Settings(
+                        allow_reset=True,
+                        anonymized_telemetry=False,  # 关键：禁用遥测
+                        is_persistent=False
+                    )
+                    self._client = chromadb.Client(settings)
+                    logger.info(f"📚 [ChromaDB] 使用备用配置初始化完成")
+                except Exception as backup_error:
+                    # 最后的备用方案
+                    self._client = chromadb.Client()
+                    logger.warning(f"⚠️ [ChromaDB] 使用最简配置初始化: {backup_error}")
                 self._initialized = True
-                logger.info(f"📚 [ChromaDB] 使用备用配置初始化完成")
 
     def get_or_create_collection(self, name: str):
         """线程安全地获取或创建集合"""
@@ -199,12 +228,46 @@ class FinancialSituationMemory:
                 self.client = "DISABLED"
                 logger.warning(f"⚠️ Google AI未找到DASHSCOPE_API_KEY，记忆功能已禁用")
                 logger.info(f"💡 系统将继续运行，但不会保存或检索历史记忆")
+        elif self.llm_provider == "openrouter":
+            # OpenRouter支持：优先使用阿里百炼嵌入，否则禁用记忆功能
+            dashscope_key = os.getenv('DASHSCOPE_API_KEY')
+            if dashscope_key:
+                try:
+                    # 尝试使用阿里百炼嵌入
+                    import dashscope
+                    from dashscope import TextEmbedding
+
+                    self.embedding = "text-embedding-v3"
+                    self.client = None
+                    dashscope.api_key = dashscope_key
+                    logger.info(f"💡 OpenRouter使用阿里百炼嵌入服务")
+                except ImportError as e:
+                    logger.error(f"❌ DashScope包未安装: {e}")
+                    self.client = "DISABLED"
+                    logger.warning(f"⚠️ OpenRouter记忆功能已禁用")
+                except Exception as e:
+                    logger.error(f"❌ DashScope初始化失败: {e}")
+                    self.client = "DISABLED"
+                    logger.warning(f"⚠️ OpenRouter记忆功能已禁用")
+            else:
+                # 没有DashScope密钥，禁用记忆功能
+                self.client = "DISABLED"
+                logger.warning(f"⚠️ OpenRouter未找到DASHSCOPE_API_KEY，记忆功能已禁用")
+                logger.info(f"💡 系统将继续运行，但不会保存或检索历史记忆")
         elif config["backend_url"] == "http://localhost:11434/v1":
             self.embedding = "nomic-embed-text"
             self.client = OpenAI(base_url=config["backend_url"])
         else:
             self.embedding = "text-embedding-3-small"
-            self.client = OpenAI(base_url=config["backend_url"])
+            openai_key = os.getenv('OPENAI_API_KEY')
+            if openai_key:
+                self.client = OpenAI(
+                    api_key=openai_key,
+                    base_url=config["backend_url"]
+                )
+            else:
+                self.client = "DISABLED"
+                logger.warning(f"⚠️ 未找到OPENAI_API_KEY，记忆功能已禁用")
 
         # 使用单例ChromaDB管理器
         self.chroma_manager = ChromaDBManager()
@@ -222,9 +285,14 @@ class FinancialSituationMemory:
         if (self.llm_provider == "dashscope" or
             self.llm_provider == "alibaba" or
             (self.llm_provider == "google" and self.client is None) or
-            (self.llm_provider == "deepseek" and self.client is None)):
+            (self.llm_provider == "deepseek" and self.client is None) or
+            (self.llm_provider == "openrouter" and self.client is None)):
             # 使用阿里百炼的嵌入模型
             try:
+                # 导入DashScope模块
+                import dashscope
+                from dashscope import TextEmbedding
+
                 # 检查DashScope API密钥是否可用
                 if not hasattr(dashscope, 'api_key') or not dashscope.api_key:
                     logger.warning(f"⚠️ DashScope API密钥未设置，记忆功能降级")
