@@ -2,13 +2,13 @@
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
-[![Version](https://img.shields.io/badge/Version-cn--0.1.12-green.svg)](./VERSION)
+[![Version](https://img.shields.io/badge/Version-cn--0.1.13--preview-orange.svg)](./VERSION)
 [![Documentation](https://img.shields.io/badge/docs-中文文档-green.svg)](./docs/)
 [![Original](https://img.shields.io/badge/基于-TauricResearch/TradingAgents-orange.svg)](https://github.com/TauricResearch/TradingAgents)
 
-> 🚀 **最新版本 cn-0.1.12**: 智能新闻分析模块全面升级，新增多层次新闻过滤、质量评估、相关性分析，支持A股/港股/美股新闻智能处理！
+> 🚀 **最新版本 cn-0.1.13-preview**: 原生OpenAI支持与Google AI全面集成预览版！新增自定义OpenAI端点、9个Google AI模型、LLM适配器架构优化！
 >
-> 🎯 **核心功能**: 智能新闻过滤 | 新闻质量评估 | 相关性分析 | 多LLM提供商支持 | 模型选择持久化 | Docker容器化部署 | 专业报告导出 | 完整A股支持 | 中文本地化
+> 🎯 **核心功能**: 原生OpenAI支持 | Google AI全面集成 | 自定义端点配置 | 智能模型选择 | 多LLM提供商支持 | 模型选择持久化 | Docker容器化部署 | 专业报告导出 | 完整A股支持 | 中文本地化
 
 基于多智能体大语言模型的**中文金融交易决策框架**。专为中文用户优化，提供完整的A股/港股/美股分析能力。
 
@@ -17,6 +17,36 @@
 感谢 [Tauric Research](https://github.com/TauricResearch) 团队创造的革命性多智能体交易框架 [TradingAgents](https://github.com/TauricResearch/TradingAgents)！
 
 **🎯 我们的使命**: 为中国用户提供完整的中文化体验，支持A股/港股市场，集成国产大模型，推动AI金融技术在中文社区的普及应用。
+
+## 🆕 v0.1.13 重大更新
+
+### 🤖 原生OpenAI端点支持
+
+- **自定义OpenAI端点**: 支持配置任意OpenAI兼容的API端点
+- **灵活模型选择**: 可以使用任何OpenAI格式的模型，不限于官方模型
+- **智能适配器**: 新增原生OpenAI适配器，提供更好的兼容性和性能
+- **配置管理**: 统一的端点和模型配置管理系统
+
+### 🧠 Google AI生态系统全面集成
+
+- **三大Google AI包支持**: langchain-google-genai、google-generativeai、google-genai
+- **9个验证模型**: gemini-2.5-pro, gemini-2.5-flash, gemini-2.0-flash等最新模型
+- **Google工具处理器**: 专门的Google AI工具调用处理器
+- **智能降级机制**: 高级功能失败时自动降级到基础功能
+
+### 🔧 LLM适配器架构优化
+
+- **GoogleOpenAIAdapter**: 新增Google AI的OpenAI兼容适配器
+- **统一接口**: 所有LLM提供商使用统一的调用接口
+- **错误处理增强**: 改进的异常处理和自动重试机制
+- **性能监控**: 添加LLM调用性能监控和统计
+
+### 🎨 Web界面智能优化
+
+- **智能模型选择**: 根据可用性自动选择最佳模型
+- **KeyError修复**: 彻底解决模型选择中的KeyError问题
+- **UI响应优化**: 改进模型切换的响应速度和用户体验
+- **错误提示**: 更友好的错误提示和解决建议
 
 ## 🆕 v0.1.12 重大更新
 
@@ -47,29 +77,6 @@
 - **示例代码归位**: 演示脚本统一到examples目录
 - **根目录整洁**: 保持根目录简洁，提升项目专业度
 
-## 🆕 v0.1.11 重大更新
-
-### 🤖 多LLM提供商集成
-
-- **4大提供商支持**: DashScope(阿里百炼)、DeepSeek V3、Google AI、OpenRouter
-- **60+模型选择**: 包括最新的Claude 4 Opus、GPT-4o、Llama 4、Gemini 2.5等
-- **智能模型分类**: OpenRouter支持OpenAI、Anthropic、Meta、Google等5个类别
-- **自定义模型**: 支持输入任意OpenRouter模型ID，满足个性化需求
-
-### 💾 模型选择持久化
-
-- **真正持久化**: 基于URL参数的存储方案，页面刷新配置保持
-- **URL分享**: 支持通过URL分享特定的模型配置
-- **自动恢复**: 页面加载时自动恢复上次选择的模型
-- **详细日志**: 完整的配置变化追踪和调试信息
-
-### 🎨 Web界面优化
-
-- **320px侧边栏**: 优化侧边栏宽度，提升空间利用率
-- **快速选择按钮**: 一键选择热门模型，提升操作效率
-- **响应式设计**: 改进不同屏幕尺寸的适配效果
-- **内存管理**: 解决ChromaDB并发冲突，提升系统稳定性
-
 ## 🎯 核心特性
 
 ### 🤖 多智能体协作架构
@@ -78,6 +85,121 @@
 - **结构化辩论**: 看涨/看跌研究员进行深度分析
 - **智能决策**: 交易员基于所有输入做出最终投资建议
 - **风险管理**: 多层次风险评估和管理机制
+
+## 🖥️ Web界面展示
+
+### 📸 界面截图预览
+
+> 🎨 **现代化Web界面**: 基于Streamlit构建的响应式Web应用，提供直观的股票分析体验
+
+#### 🏠 主界面 - 分析配置
+
+![1755003162925](images/README/1755003162925.png)
+
+![1755002619976](images/README/1755002619976.png)
+
+*智能配置面板，支持多市场股票分析，5级研究深度选择*
+
+#### 📊 实时分析进度
+
+![1755002731483](images/README/1755002731483.png)
+
+*实时进度跟踪，可视化分析过程，智能时间预估*
+
+#### 📈 分析结果展示
+
+![1755002901204](images/README/1755002901204.png)
+
+![1755002924844](images/README/1755002924844.png)
+
+![1755002939905](images/README/1755002939905.png)
+
+![1755002968608](images/README/1755002968608.png)
+
+![1755002985903](images/README/1755002985903.png)
+
+![1755003004403](images/README/1755003004403.png)
+
+![1755003019759](images/README/1755003019759.png)
+
+![1755003033939](images/README/1755003033939.png)
+
+![1755003048242](images/README/1755003048242.png)
+
+
+
+![1755003064598](images/README/1755003064598.png)
+
+![1755003090603](images/README/1755003090603.png)
+
+*专业投资报告，多维度分析结果，一键导出功能*
+
+### 🎯 核心功能特色
+
+#### 📋 **智能分析配置**
+
+- **🌍 多市场支持**: 美股、A股、港股一站式分析
+- **🎯 5级研究深度**: 从2分钟快速分析到25分钟全面研究
+- **🤖 智能体选择**: 市场技术、基本面、新闻、社交媒体分析师
+- **📅 灵活时间设置**: 支持历史任意时间点分析
+
+#### 🚀 **实时进度跟踪**
+
+- **📊 可视化进度**: 实时显示分析进展和剩余时间
+- **🔄 智能步骤识别**: 自动识别当前分析阶段
+- **⏱️ 准确时间预估**: 基于历史数据的智能时间计算
+- **💾 状态持久化**: 页面刷新不丢失分析进度
+
+#### 📈 **专业结果展示**
+
+- **🎯 投资决策**: 明确的买入/持有/卖出建议
+- **📊 多维分析**: 技术面、基本面、新闻面综合评估
+- **🔢 量化指标**: 置信度、风险评分、目标价位
+- **📄 专业报告**: 支持Markdown/Word/PDF格式导出
+
+#### 🤖 **多LLM模型管理**
+
+- **🌐 4大提供商**: DashScope、DeepSeek、Google AI、OpenRouter
+- **🎯 60+模型选择**: 从经济型到旗舰级模型全覆盖
+- **💾 配置持久化**: URL参数存储，刷新保持设置
+- **⚡ 快速切换**: 5个热门模型一键选择按钮
+
+### 🎮 Web界面操作指南
+
+#### 🚀 **快速开始流程**
+
+1. **启动应用**: `python start_web.py` 或 `docker-compose up -d`
+2. **访问界面**: 浏览器打开 `http://localhost:8501`
+3. **配置模型**: 侧边栏选择LLM提供商和模型
+4. **输入股票**: 输入股票代码（如 AAPL、000001、0700.HK）
+5. **选择深度**: 根据需求选择1-5级研究深度
+6. **开始分析**: 点击"🚀 开始分析"按钮
+7. **查看结果**: 实时跟踪进度，查看分析报告
+8. **导出报告**: 一键导出专业格式报告
+
+#### 📊 **支持的股票代码格式**
+
+- **🇺🇸 美股**: `AAPL`, `TSLA`, `MSFT`, `NVDA`, `GOOGL`
+- **🇨🇳 A股**: `000001`, `600519`, `300750`, `002415`
+- **🇭🇰 港股**: `0700.HK`, `9988.HK`, `3690.HK`, `1810.HK`
+
+#### 🎯 **研究深度说明**
+
+- **1级 (2-4分钟)**: 快速概览，基础技术指标
+- **2级 (4-6分钟)**: 标准分析，技术+基本面
+- **3级 (6-10分钟)**: 深度分析，加入新闻情绪 ⭐ **推荐**
+- **4级 (10-15分钟)**: 全面分析，多轮智能体辩论
+- **5级 (15-25分钟)**: 最深度分析，完整研究报告
+
+#### 💡 **使用技巧**
+
+- **🔄 实时刷新**: 分析过程中可随时刷新页面，进度不丢失
+- **📱 移动适配**: 支持手机和平板设备访问
+- **🎨 深色模式**: 自动适配系统主题设置
+- **⌨️ 快捷键**: 支持Enter键快速提交分析
+- **📋 历史记录**: 自动保存最近的分析配置
+
+> 📖 **详细指南**: 完整的Web界面使用说明请参考 [🖥️ Web界面详细使用指南](docs/usage/web-interface-detailed-guide.md)
 
 ## 🎯 功能特性
 
@@ -108,20 +230,24 @@
 | **⏱️ 时间预估功能**   | ✅ 完整支持 | 智能分析阶段显示预计耗时             |
 | **🌈 Rich彩色输出**     | ✅ 完整支持 | 彩色进度指示，状态图标，视觉效果提升 |
 
-### 🧠 LLM模型支持 ✨ **v0.1.11全面升级**
+### 🧠 LLM模型支持 ✨ **v0.1.13全面升级**
 
 
 | 模型提供商        | 支持模型                     | 特色功能                | 新增功能 |
 | ----------------- | ---------------------------- | ----------------------- | -------- |
 | **🇨🇳 阿里百炼** | qwen-turbo/plus/max          | 中文优化，成本效益高    | ✅ 集成  |
 | **🇨🇳 DeepSeek** | deepseek-chat                | 工具调用，性价比极高    | ✅ 集成  |
-| **🌍 Google AI**  | gemini-2.0-flash/1.5-pro     | 多模态支持，推理能力强  | ✅ 集成  |
-| **🌐 OpenRouter** | **60+模型聚合平台**          | 一个API访问所有主流模型 | 🆕 新增  |
-| ├─**OpenAI**    | o4-mini-high, o3-pro, GPT-4o | 最新o系列，推理专业版   | 🆕 新增  |
-| ├─**Anthropic** | Claude 4 Opus/Sonnet/Haiku   | 顶级性能，平衡版本      | 🆕 新增  |
-| ├─**Meta**      | Llama 4 Maverick/Scout       | 最新Llama 4系列         | 🆕 新增  |
-| ├─**Google**    | Gemini 2.5 Pro/Flash         | 多模态专业版            | 🆕 新增  |
-| └─**自定义**    | 任意OpenRouter模型ID         | 无限扩展，个性化选择    | 🆕 新增  |
+| **🌍 Google AI**  | **9个验证模型**              | 最新Gemini 2.5系列      | 🆕 升级  |
+| ├─**最新旗舰**  | gemini-2.5-pro/flash         | 最新旗舰，超快响应      | 🆕 新增  |
+| ├─**稳定推荐**  | gemini-2.0-flash             | 推荐使用，平衡性能      | 🆕 新增  |
+| ├─**经典强大**  | gemini-1.5-pro/flash         | 经典稳定，高质量分析    | ✅ 集成  |
+| └─**轻量快速**  | gemini-2.5-flash-lite        | 轻量级任务，快速响应    | 🆕 新增  |
+| **🌐 原生OpenAI** | **自定义端点支持**           | 任意OpenAI兼容端点      | 🆕 新增  |
+| **🌐 OpenRouter** | **60+模型聚合平台**          | 一个API访问所有主流模型 | ✅ 集成  |
+| ├─**OpenAI**    | o4-mini-high, o3-pro, GPT-4o | 最新o系列，推理专业版   | ✅ 集成  |
+| ├─**Anthropic** | Claude 4 Opus/Sonnet/Haiku   | 顶级性能，平衡版本      | ✅ 集成  |
+| ├─**Meta**      | Llama 4 Maverick/Scout       | 最新Llama 4系列         | ✅ 集成  |
+| └─**自定义**    | 任意OpenRouter模型ID         | 无限扩展，个性化选择    | ✅ 集成  |
 
 **🎯 快速选择**: 5个热门模型快速按钮 | **💾 持久化**: URL参数存储，刷新保持 | **🔄 智能切换**: 一键切换不同提供商
 
@@ -171,7 +297,6 @@ chmod +x scripts/smart_start.sh && ./scripts/smart_start.sh
 # 4. 访问应用
 # Web界面: http://localhost:8501
 ```
-
 ### 💻 本地部署
 
 ```bash
@@ -186,7 +311,6 @@ python start_web.py
 
 # 4. 访问 http://localhost:8501
 ```
-
 ### 📊 开始分析
 
 1. **选择模型**: DeepSeek V3 / 通义千问 / Gemini
@@ -204,7 +328,6 @@ python start_web.py
 - **🆕 多LLM集成**: v0.1.11新增4大提供商，60+模型，一站式AI体验
 - **💾 配置持久化**: 模型选择真正持久化，URL参数存储，刷新保持
 - **🎯 快速切换**: 5个热门模型快速按钮，一键切换不同AI
-- **📐 界面优化**: 320px侧边栏，响应式设计，空间利用更高效
 - **🆕 实时进度**: v0.1.10异步进度跟踪，告别黑盒等待
 - **💾 智能会话**: 状态持久化，页面刷新不丢失分析结果
 - **🇨🇳 中国优化**: A股/港股数据 + 国产LLM + 中文界面
@@ -262,15 +385,19 @@ env\Scripts\activate
 # Linux/macOS
 source env/bin/activate
 
-# 3. 安装所有依赖
+# 3. 升级pip
+python -m pip install --upgrade pip
+
+# 4. 安装所有依赖
 pip install -r requirements.txt
+#或者使用pip install -e .
+pip install -e .
 
 # 注意：requirements.txt已包含所有必需依赖：
 # - 数据库支持 (MongoDB + Redis)
 # - 多市场数据源 (Tushare, AKShare, FinnHub等)
 # - Web界面和报告导出功能
 ```
-
 ### 配置API密钥
 
 #### 🇨🇳 推荐：使用阿里百炼（国产大模型）
@@ -304,7 +431,6 @@ REDIS_PORT=6379        # 标准Redis端口
 # MONGODB_HOST=mongodb
 # REDIS_HOST=redis
 ```
-
 #### 📋 部署模式配置说明
 
 **本地部署模式**：
@@ -318,7 +444,6 @@ MONGODB_PORT=27017         # 标准端口
 REDIS_HOST=localhost       # 本地主机
 REDIS_PORT=6379           # 标准端口
 ```
-
 **Docker部署模式**：
 
 ```bash
@@ -330,7 +455,6 @@ MONGODB_PORT=27017        # 标准端口
 REDIS_HOST=redis          # Docker容器服务名
 REDIS_PORT=6379          # 标准端口
 ```
-
 > 💡 **配置提示**：
 >
 > - 本地部署：需要手动启动MongoDB和Redis服务
@@ -346,7 +470,6 @@ OPENAI_API_KEY=your_openai_api_key
 # Anthropic (需要科学上网)
 ANTHROPIC_API_KEY=your_anthropic_api_key
 ```
-
 ### 🗄️ 数据库配置（MongoDB + Redis）
 
 #### 高性能数据存储支持
@@ -372,7 +495,6 @@ docker-compose up -d --build
 # - Redis (端口6379)
 # - 数据库管理界面 (端口8081, 8082)
 ```
-
 **💻 本地部署 - 数据库配置**
 
 如果您使用本地部署，可以选择以下方式：
@@ -389,7 +511,6 @@ docker-compose ps
 # 停止服务
 docker-compose down
 ```
-
 **方式二：完全本地安装**
 
 ```bash
@@ -401,7 +522,6 @@ mongod --dbpath ./data/mongodb
 # 启动 Redis (默认端口 6379)
 redis-server
 ```
-
 > ⚠️ **重要说明**:
 >
 > - **🐳 Docker部署**: 数据库自动包含，无需额外配置
@@ -426,7 +546,6 @@ REDIS_PORT=6379
 REDIS_PASSWORD=your_redis_password
 REDIS_DB=0
 ```
-
 **配置文件方式**：
 
 ```python
@@ -447,7 +566,6 @@ DATABASE_CONFIG = {
     }
 }
 ```
-
 #### 数据库功能特性
 
 **MongoDB 功能**：
@@ -478,7 +596,6 @@ DATABASE_CONFIG = {
 4. 💾 本地文件缓存 (备用)
 5. ❌ 返回错误信息
 ```
-
 **配置降级策略**：
 
 ```python
@@ -491,7 +608,6 @@ ENABLE_FALLBACK=true
 REDIS_CACHE_TTL=300
 MONGODB_CACHE_TTL=3600
 ```
-
 #### 性能优化建议
 
 **生产环境配置**：
@@ -507,7 +623,6 @@ REDIS_MAX_CONNECTIONS=20
 REDIS_CONNECTION_POOL_SIZE=10
 REDIS_SOCKET_TIMEOUT=5
 ```
-
 #### 数据库管理工具
 
 ```bash
@@ -520,7 +635,6 @@ python scripts/validation/check_system_status.py
 # 清理缓存工具
 python scripts/maintenance/cleanup_cache.py --days 7
 ```
-
 #### 故障排除
 
 **常见问题解决**：
@@ -535,16 +649,14 @@ python scripts/maintenance/cleanup_cache.py --days 7
    # 方案1：禁用内存功能（推荐）
    # 在 .env 文件中添加：
    MEMORY_ENABLED=false
-   
+
    # 方案2：使用专用修复脚本
    powershell -ExecutionPolicy Bypass -File scripts\fix_chromadb_win10.ps1
-   
+
    # 方案3：管理员权限运行
    # 右键PowerShell -> "以管理员身份运行"
    ```
-
    **详细解决方案**：参考 [Windows 10兼容性指南](docs/troubleshooting/windows10-chromadb-fix.md)
-
 2. **MongoDB连接失败**
 
    **Docker部署**：
@@ -556,7 +668,6 @@ python scripts/maintenance/cleanup_cache.py --days 7
    # 重启服务
    docker-compose restart mongodb
    ```
-
    **本地部署**：
 
    ```bash
@@ -567,7 +678,7 @@ python scripts/maintenance/cleanup_cache.py --days 7
    sudo systemctl restart mongod  # Linux
    brew services restart mongodb  # macOS
    ```
-2. **Redis连接超时**
+3. **Redis连接超时**
 
    ```bash
    # 检查Redis状态
@@ -576,7 +687,7 @@ python scripts/maintenance/cleanup_cache.py --days 7
    # 清理Redis缓存
    redis-cli flushdb
    ```
-3. **缓存问题**
+4. **缓存问题**
 
    ```bash
    # 检查系统状态和缓存
@@ -626,7 +737,6 @@ pip install markdown pypandoc
 # macOS: brew install pandoc wkhtmltopdf
 # Linux: sudo apt-get install pandoc wkhtmltopdf
 ```
-
 > 📚 **详细文档**: 完整的导出功能使用指南请参考 [导出功能指南](docs/EXPORT_GUIDE.md)
 
 ### 🚀 启动应用
@@ -647,7 +757,6 @@ docker-compose ps
 # 查看日志
 docker-compose logs -f web
 ```
-
 #### 💻 本地启动
 
 如果您使用本地部署：
@@ -672,7 +781,6 @@ python web/run_web.py
 # 方法3：直接使用streamlit（需要先安装项目）
 streamlit run web/app.py
 ```
-
 然后在浏览器中访问 `http://localhost:8501`
 
 **Web界面特色功能**:
@@ -720,7 +828,6 @@ print(f"置信度: {decision['confidence']:.1%}")
 print(f"风险评分: {decision['risk_score']:.1%}")
 print(f"推理过程: {decision['reasoning']}")
 ```
-
 #### 快速启动脚本
 
 ```bash
@@ -739,7 +846,6 @@ python examples/openai/demo_openai.py
 # 集成测试
 python tests/integration/test_dashscope_integration.py
 ```
-
 #### 📁 数据目录配置
 
 **新功能**: 灵活配置数据存储路径，支持多种配置方式：
@@ -754,7 +860,6 @@ python -m cli.main data-config --set /path/to/your/data
 # 重置为默认配置
 python -m cli.main data-config --reset
 ```
-
 **环境变量配置**:
 
 ```bash
@@ -764,7 +869,6 @@ set TRADING_AGENTS_DATA_DIR=C:\MyTradingData
 # Linux/macOS
 export TRADING_AGENTS_DATA_DIR=/home/user/trading_data
 ```
-
 **程序化配置**:
 
 ```python
@@ -778,7 +882,6 @@ config_manager.set_data_directory("/path/to/data")
 data_dir = config_manager.get_data_directory()
 print(f"数据目录: {data_dir}")
 ```
-
 **配置优先级**: 程序设置 > 环境变量 > 配置文件 > 默认值
 
 详细说明请参考: [📁 数据目录配置指南](docs/configuration/data-directory-configuration.md)
@@ -789,7 +892,6 @@ print(f"数据目录: {data_dir}")
 # 启动交互式命令行界面
 python -m cli.main
 ```
-
 ## 🎯 **快速导航** - 找到您需要的内容
 
 
@@ -921,7 +1023,6 @@ docs/
 └── ❓ faq/                  # 问题解决 - 疑难解答
     └── faq.md              # 🆘 常见问题FAQ
 ```
-
 ### 🎯 **重点推荐文档** (必读精选)
 
 #### 🔥 **最受欢迎的文档**
@@ -1060,7 +1161,6 @@ cost_optimized_config = {
     "online_tools": False  # 使用缓存数据
 }
 ```
-
 ## 🤝 贡献指南
 
 我们欢迎各种形式的贡献：
@@ -1153,7 +1253,8 @@ cost_optimized_config = {
 
 ## 📈 版本历史
 
-- **v0.1.12** (2025-07-29): 🧠 智能新闻分析模块与项目结构优化 ✨ **最新版本**
+- **v0.1.13** (2025-08-02): 🤖 原生OpenAI支持与Google AI生态系统全面集成 ✨ **最新版本**
+- **v0.1.12** (2025-07-29): 🧠 智能新闻分析模块与项目结构优化
 - **v0.1.11** (2025-07-27): 🤖 多LLM提供商集成与模型选择持久化
 - **v0.1.10** (2025-07-18): 🚀 Web界面实时进度显示与智能会话管理
 - **v0.1.9** (2025-07-16): 🎯 CLI用户体验重大优化与统一日志管理
