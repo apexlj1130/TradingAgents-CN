@@ -1579,6 +1579,16 @@ def get_china_stock_data_unified(
         from .data_source_manager import get_china_stock_data_unified
 
         result = get_china_stock_data_unified(ticker, start_date, end_date)
+        if isinstance(result, tuple):
+            logger.warning(
+                "⚠️ [统一接口] 收到旧格式 tuple 返回值，自动解包为字符串",
+                extra={
+                    'function': 'get_china_stock_data_unified',
+                    'ticker': ticker,
+                    'event_type': 'unified_data_call_tuple_compat'
+                }
+            )
+            result = result[0] if len(result) > 0 else ""
 
         # 记录详细的输出结果
         duration = time.time() - start_time

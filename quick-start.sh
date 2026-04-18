@@ -1,144 +1,293 @@
 #!/bin/bash
 
-# TradingAgents-CN Docker快速启动脚本
-# 作者: TradingAgents-CN项目组
-# 用途: 一键启动所有Docker服务
+# TradingAgents-CN Docker 一键部署脚本
+# 适用于 Linux Docker 环境
+# 功能：
+# 1. 启动/重建 Docker 服务
+# 2. 等待 MongoDB、Redis、Backend、Frontend 就绪
+# 3. 自动创建默认管理员用户
+# 4. 验证前端登录链路
 
-set -e  # 遇到错误立即退出
+set -euo pipefail
 
-echo "========================================"
-echo "🚀 TradingAgents-CN Docker快速启动"
-echo "========================================"
-echo ""
-
-# 颜色定义
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+CYAN='\033[0;36m'
+NC='\033[0m'
 
-# 检查Docker是否运行
-echo -e "${BLUE}🔍 检查Docker服务状态...${NC}"
-if ! docker version >/dev/null 2>&1; then
-    echo -e "${RED}❌ Docker未运行或未安装${NC}"
-    echo "请先启动Docker Desktop或安装Docker"
-    exit 1
-fi
-echo -e "${GREEN}✅ Docker服务正常${NC}"
-echo ""
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$PROJECT_ROOT"
 
-# 检查docker-compose文件
-if [ ! -f "docker-compose.yml" ]; then
-    echo -e "${RED}❌ 未找到docker-compose.yml文件${NC}"
-    echo "请确保在项目根目录下运行此脚本"
-    exit 1
-fi
+ADMIN_USERNAME="${ADMIN_USERNAME:-admin}"
+ADMIN_PASSWORD="${ADMIN_PASSWORD:-admin123}"
+ADMIN_EMAIL="${ADMIN_EMAIL:-${ADMIN_USERNAME}@tradingagents.cn}"
+FRONTEND_URL="${FRONTEND_URL:-http://localhost:3000}"
+BACKEND_URL="${BACKEND_URL:-http://localhost:8000}"
 
-# 检查环境变量文件
-echo -e "${BLUE}🔍 检查环境配置...${NC}"
-if [ ! -f ".env" ]; then
-    echo -e "${YELLOW}⚠️ 未找到.env文件，将使用docker-compose默认配置${NC}"
-else
-    echo -e "${GREEN}✅ 找到.env配置文件${NC}"
-fi
-echo ""
+MONGODB_CONTAINER="tradingagents-mongodb"
+REDIS_CONTAINER="tradingagents-redis"
+BACKEND_CONTAINER="tradingagents-backend"
+FRONTEND_CONTAINER="tradingagents-frontend"
 
-# 清理可能的旧容器
-echo -e "${BLUE}🧹 清理旧容器...${NC}"
-docker-compose down >/dev/null 2>&1 || true
-echo -e "${GREEN}✅ 清理完成${NC}"
-echo ""
+print_banner() {
+    echo "========================================"
+    echo "🚀 TradingAgents-CN Docker 一键部署"
+    echo "========================================"
+    echo ""
+}
 
-# 启动服务
-echo -e "${BLUE}🚀 启动Docker服务...${NC}"
-echo "正在启动以下服务："
-echo "  📊 MongoDB (数据库)"
-echo "  📦 Redis (缓存)"
-echo "  🖥️ Redis Commander (管理界面)"
-echo "  🌐 TradingAgents Web (主应用)"
-echo ""
+print_step() {
+    echo -e "${BLUE}$1${NC}"
+}
 
-if docker-compose up -d; then
-    echo -e "${GREEN}✅ 所有服务启动成功${NC}"
-else
-    echo -e "${RED}❌ 服务启动失败${NC}"
-    echo "请检查日志: docker-compose logs"
-    exit 1
-fi
-echo ""
+print_ok() {
+    echo -e "${GREEN}$1${NC}"
+}
 
-# 等待服务启动
-echo -e "${BLUE}⏳ 等待服务完全启动...${NC}"
-for i in {1..20}; do
-    echo -n "."
-    sleep 1
-done
-echo ""
-echo ""
+print_warn() {
+    echo -e "${YELLOW}$1${NC}"
+}
 
-# 检查服务状态
-echo -e "${BLUE}📊 服务状态检查:${NC}"
-docker-compose ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}"
-echo ""
+print_err() {
+    echo -e "${RED}$1${NC}"
+}
 
-# 健康检查
-echo -e "${BLUE}🏥 健康检查...${NC}"
-
-# 检查Web应用
-if curl -s http://localhost:8501 >/dev/null 2>&1; then
-    echo -e "${GREEN}✅ Web应用 (端口8501) - 正常${NC}"
-else
-    echo -e "${YELLOW}⚠️ Web应用 (端口8501) - 启动中...${NC}"
-fi
-
-# 检查Redis Commander
-if curl -s http://localhost:8081 >/dev/null 2>&1; then
-    echo -e "${GREEN}✅ Redis管理界面 (端口8081) - 正常${NC}"
-else
-    echo -e "${YELLOW}⚠️ Redis管理界面 (端口8081) - 启动中...${NC}"
-fi
-
-echo ""
-echo "========================================"
-echo -e "${GREEN}🎉 启动完成！${NC}"
-echo "========================================"
-echo ""
-echo -e "${BLUE}📱 主要访问地址:${NC}"
-echo "  🌐 TradingAgents Web应用: http://localhost:8501"
-echo "  🔧 Redis管理界面:        http://localhost:8081"
-echo ""
-echo -e "${BLUE}📊 数据库连接信息:${NC}"
-echo "  MongoDB: mongodb://admin:tradingagents123@localhost:27017/tradingagents"
-echo "  Redis:   redis://:tradingagents123@localhost:6379"
-echo ""
-echo -e "${BLUE}💡 常用命令:${NC}"
-echo "  查看日志: docker-compose logs -f"
-echo "  停止服务: docker-compose down"
-echo "  重启服务: docker-compose restart"
-echo "  服务状态: docker-compose ps"
-echo ""
-echo -e "${YELLOW}🔥 现在可以在浏览器中访问: http://localhost:8501${NC}"
-echo ""
-
-# 可选：自动打开浏览器
-read -p "是否自动打开浏览器? (y/N): " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    echo -e "${BLUE}🌐 正在打开浏览器...${NC}"
-    if command -v open >/dev/null 2>&1; then
-        # macOS
-        open http://localhost:8501
-    elif command -v xdg-open >/dev/null 2>&1; then
-        # Linux
-        xdg-open http://localhost:8501
-    elif command -v start >/dev/null 2>&1; then
-        # Windows (Git Bash)
-        start http://localhost:8501
+detect_compose() {
+    if docker compose version >/dev/null 2>&1; then
+        COMPOSE_CMD=(docker compose)
+    elif command -v docker-compose >/dev/null 2>&1; then
+        COMPOSE_CMD=(docker-compose)
     else
-        echo -e "${YELLOW}请手动访问: http://localhost:8501${NC}"
+        print_err "❌ 未找到 docker compose / docker-compose"
+        exit 1
     fi
-fi
+}
 
-echo ""
-echo -e "${GREEN}🚀 TradingAgents-CN 已准备就绪！${NC}" 
+require_cmd() {
+    local cmd="$1"
+    if ! command -v "$cmd" >/dev/null 2>&1; then
+        print_err "❌ 缺少命令: $cmd"
+        exit 1
+    fi
+}
+
+check_environment() {
+    print_step "🔍 检查运行环境..."
+
+    require_cmd docker
+    require_cmd curl
+
+    if ! docker version >/dev/null 2>&1; then
+        print_err "❌ Docker 未运行或未安装"
+        exit 1
+    fi
+
+    if [ ! -f "docker-compose.yml" ]; then
+        print_err "❌ 未找到 docker-compose.yml，请在项目根目录运行"
+        exit 1
+    fi
+
+    if [ ! -f ".env" ] && [ -f ".env.example" ]; then
+        cp .env.example .env
+        print_warn "⚠️ 未找到 .env，已从 .env.example 复制生成"
+    fi
+
+    print_ok "✅ 环境检查通过"
+    echo ""
+}
+
+start_services() {
+    print_step "🐳 启动 Docker 服务..."
+    "${COMPOSE_CMD[@]}" up -d --build
+    print_ok "✅ Docker 服务已启动"
+    echo ""
+}
+
+wait_for_container_health() {
+    local container="$1"
+    local timeout="${2:-180}"
+    local elapsed=0
+
+    while [ "$elapsed" -lt "$timeout" ]; do
+        local status
+        status="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$container" 2>/dev/null || true)"
+
+        if [ "$status" = "healthy" ] || [ "$status" = "running" ]; then
+            print_ok "✅ $container 已就绪 ($status)"
+            return 0
+        fi
+
+        sleep 3
+        elapsed=$((elapsed + 3))
+    done
+
+    print_err "❌ $container 在 ${timeout}s 内未就绪"
+    docker logs --tail 80 "$container" 2>/dev/null || true
+    return 1
+}
+
+wait_for_http() {
+    local url="$1"
+    local name="$2"
+    local timeout="${3:-180}"
+    local elapsed=0
+
+    while [ "$elapsed" -lt "$timeout" ]; do
+        if curl -fsS "$url" >/dev/null 2>&1; then
+            print_ok "✅ $name 可访问: $url"
+            return 0
+        fi
+
+        sleep 3
+        elapsed=$((elapsed + 3))
+    done
+
+    print_err "❌ $name 在 ${timeout}s 内未响应: $url"
+    return 1
+}
+
+wait_for_services() {
+    print_step "⏳ 等待容器健康检查通过..."
+    wait_for_container_health "$MONGODB_CONTAINER"
+    wait_for_container_health "$REDIS_CONTAINER"
+    wait_for_container_health "$BACKEND_CONTAINER"
+    print_warn "⚠️ 跳过 frontend 容器 healthcheck 阻塞，改用 HTTP 可达性验证"
+    echo ""
+
+    print_step "🌐 等待 HTTP 服务可访问..."
+    wait_for_http "$BACKEND_URL/api/health" "后端健康接口"
+    wait_for_http "$FRONTEND_URL/health" "前端健康接口"
+    echo ""
+}
+
+ensure_admin_user() {
+    print_step "👤 创建或修复默认管理员账户..."
+
+    docker exec -i \
+        -e ADMIN_USERNAME="$ADMIN_USERNAME" \
+        -e ADMIN_PASSWORD="$ADMIN_PASSWORD" \
+        -e ADMIN_EMAIL="$ADMIN_EMAIL" \
+        "$BACKEND_CONTAINER" \
+        python - <<'PY'
+import hashlib
+import os
+from datetime import datetime
+
+from pymongo import MongoClient
+
+from app.core.config import settings
+
+username = os.environ["ADMIN_USERNAME"]
+password = os.environ["ADMIN_PASSWORD"]
+email = os.environ["ADMIN_EMAIL"]
+
+client = MongoClient(settings.MONGO_URI)
+db = client[settings.MONGO_DB]
+
+db.users.update_one(
+    {"username": username},
+    {
+        "$set": {
+            "username": username,
+            "email": email,
+            "hashed_password": hashlib.sha256(password.encode()).hexdigest(),
+            "is_active": True,
+            "is_verified": True,
+            "is_admin": True,
+            "updated_at": datetime.utcnow(),
+            "last_login": None,
+            "preferences": {
+                "default_market": "A股",
+                "default_depth": "深度",
+                "ui_theme": "light",
+                "language": "zh-CN",
+                "notifications_enabled": True,
+                "email_notifications": False,
+            },
+            "daily_quota": 10000,
+            "concurrent_limit": 10,
+            "total_analyses": 0,
+            "successful_analyses": 0,
+            "failed_analyses": 0,
+            "favorite_stocks": [],
+        },
+        "$setOnInsert": {
+            "created_at": datetime.utcnow(),
+        },
+    },
+    upsert=True,
+)
+
+print(f"ensured admin user in db={settings.MONGO_DB}, username={username}")
+PY
+
+    print_ok "✅ 默认管理员账户已准备完成"
+    echo ""
+}
+
+verify_login() {
+    print_step "🔐 验证登录链路..."
+
+    local response_file
+    response_file="$(mktemp)"
+    local status
+    status="$(
+        curl -sS \
+            -o "$response_file" \
+            -w '%{http_code}' \
+            -X POST "$FRONTEND_URL/api/auth/login" \
+            -H 'Content-Type: application/json' \
+            -d "{\"username\":\"$ADMIN_USERNAME\",\"password\":\"$ADMIN_PASSWORD\"}"
+    )"
+
+    if [ "$status" != "200" ]; then
+        print_err "❌ 登录验证失败，HTTP 状态码: $status"
+        cat "$response_file"
+        rm -f "$response_file"
+        exit 1
+    fi
+
+    rm -f "$response_file"
+    print_ok "✅ 前端登录链路验证成功"
+    echo ""
+}
+
+show_summary() {
+    print_step "📊 当前服务状态:"
+    "${COMPOSE_CMD[@]}" ps
+    echo ""
+
+    echo "========================================"
+    echo -e "${GREEN}🎉 部署完成${NC}"
+    echo "========================================"
+    echo ""
+    echo -e "${CYAN}访问地址:${NC}"
+    echo "  前端: $FRONTEND_URL"
+    echo "  后端 API: $BACKEND_URL"
+    echo "  API 文档: $BACKEND_URL/docs"
+    echo ""
+    echo -e "${CYAN}默认管理员:${NC}"
+    echo "  用户名: $ADMIN_USERNAME"
+    echo "  密码: $ADMIN_PASSWORD"
+    echo ""
+    echo -e "${CYAN}常用命令:${NC}"
+    echo "  查看日志: ${COMPOSE_CMD[*]} logs -f"
+    echo "  查看状态: ${COMPOSE_CMD[*]} ps"
+    echo "  停止服务: ${COMPOSE_CMD[*]} down"
+    echo ""
+}
+
+main() {
+    print_banner
+    detect_compose
+    check_environment
+    start_services
+    wait_for_services
+    ensure_admin_user
+    verify_login
+    show_summary
+}
+
+main "$@"

@@ -88,6 +88,18 @@ class DataSourceManager:
         from tradingagents.config.runtime_settings import use_app_cache_enabled
         return use_app_cache_enabled()
 
+    @staticmethod
+    def _normalize_stock_data_result(
+        payload: Any,
+        actual_source: Optional[str] = None
+    ) -> tuple[str, Optional[str]]:
+        """统一股票数据返回值，兼容旧逻辑中的 (result, source) 元组。"""
+        if isinstance(payload, tuple):
+            result = payload[0] if len(payload) > 0 else ""
+            payload_source = payload[1] if len(payload) > 1 else None
+            return result, payload_source or actual_source
+        return payload, actual_source
+
     def _get_data_source_priority_order(self, symbol: Optional[str] = None) -> List[ChinaDataSource]:
         """
         从数据库获取数据源优先级顺序（用于降级）
@@ -1081,6 +1093,8 @@ class DataSourceManager:
                 result = f"❌ 不支持的数据源: {self.current_source.value}"
                 actual_source = None
 
+            result, actual_source = self._normalize_stock_data_result(result, actual_source)
+
             # 记录详细的输出结果
             duration = time.time() - start_time
             result_length = len(result) if result else 0
@@ -1118,9 +1132,11 @@ class DataSourceManager:
                               })
 
                 # 数据质量异常时也尝试降级到其他数据源
-                fallback_result = self._try_fallback_sources(symbol, start_date, end_date)
+                fallback_result, fallback_source = self._normalize_stock_data_result(
+                    self._try_fallback_sources(symbol, start_date, end_date, period)
+                )
                 if fallback_result and "❌" not in fallback_result and "错误" not in fallback_result:
-                    logger.info(f"✅ [数据来源: 备用数据源] 降级成功获取数据: {symbol}")
+                    logger.info(f"✅ [数据来源: {fallback_source or '备用数据源'}] 降级成功获取数据: {symbol}")
                     return fallback_result
                 else:
                     logger.error(f"❌ [数据来源: 所有数据源失败] 所有数据源都无法获取有效数据: {symbol}")
@@ -1138,7 +1154,10 @@ class DataSourceManager:
                             'error': str(e),
                             'event_type': 'data_fetch_exception'
                         }, exc_info=True)
-            return self._try_fallback_sources(symbol, start_date, end_date)
+            fallback_result, _ = self._normalize_stock_data_result(
+                self._try_fallback_sources(symbol, start_date, end_date, period)
+            )
+            return fallback_result
 
     def _get_mongodb_data(self, symbol: str, start_date: str, end_date: str, period: str = "daily") -> tuple[str, str | None]:
         """

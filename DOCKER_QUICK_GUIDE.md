@@ -8,10 +8,11 @@
 
 这将自动：
 - ✅ 检查Docker环境
-- 🧹 清理旧容器
-- 🚀 启动所有服务
-- 🏥 进行健康检查
-- 🌐 提供访问地址
+- 🚀 构建并启动当前新版服务
+- 🏥 等待前后端与数据库健康检查通过
+- 👤 自动创建默认管理员账号
+- 🔐 验证前端登录链路
+- 🌐 输出最终访问地址
 
 ## 🛑 一键停止
 
@@ -28,17 +29,33 @@
 
 | 服务 | 地址 | 说明 |
 |------|------|------|
-| **主应用** | http://localhost:8501 | Streamlit Web界面 |
+| **主应用** | http://localhost:3000 | Vue 前端界面 |
+| **后端 API** | http://localhost:8000 | FastAPI 服务 |
 | **Redis管理** | http://localhost:8081 | Redis Commander |
 
 ## 💾 数据库信息
 
 ```bash
 # MongoDB
-mongodb://admin:tradingagents123@localhost:27017/tradingagents
+mongodb://admin:tradingagents123@localhost:27017/tradingagents?authSource=admin
 
 # Redis
 redis://:tradingagents123@localhost:6379
+```
+
+## 🔐 默认登录信息
+
+脚本会自动创建或修复默认管理员账号：
+
+```text
+用户名: admin
+密码: admin123
+```
+
+如需自定义，可以在执行前设置环境变量：
+
+```bash
+ADMIN_USERNAME=myadmin ADMIN_PASSWORD='your-password' ./quick-start.sh
 ```
 
 ## 🔧 常用命令
@@ -49,13 +66,13 @@ redis://:tradingagents123@localhost:6379
 docker-compose ps
 
 # 查看日志
-docker-compose logs -f web
+docker-compose logs -f
 
 # 重启服务
-docker-compose restart web
+docker-compose restart frontend backend
 
 # 进入容器
-docker exec -it TradingAgents-web bash
+docker exec -it tradingagents-backend bash
 ```
 
 ### 数据管理
@@ -187,6 +204,6 @@ docker exec tradingagents-redis redis-cli -a tradingagents123 memory purge
 
 ---
 
-**💡 提示**: 首次启动可能需要下载镜像，请耐心等待。后续启动会很快！
+**💡 提示**: 首次启动会构建镜像并等待服务健康检查，请耐心等待。  
 
-**🔥 快速访问**: 启动完成后直接访问 http://localhost:8501 开始使用！ 
+**🔥 快速访问**: 启动完成后直接访问 http://localhost:3000 开始使用！ 
