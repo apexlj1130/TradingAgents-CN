@@ -32,33 +32,22 @@ class ChromaDBManager:
     def __init__(self):
         if not self._initialized:
             try:
-                # 自动检测操作系统版本并使用最优配置
+                # 使用统一的配置模块
+                from .chromadb_config import get_optimal_chromadb_client, is_windows_11
                 import platform
+
+                self._client = get_optimal_chromadb_client()
+
+                # 记录初始化信息
                 system = platform.system()
-                
                 if system == "Windows":
-                    # 使用改进的Windows 11检测
-                    from .chromadb_win11_config import is_windows_11
                     if is_windows_11():
-                        # Windows 11 或更新版本，使用优化配置
-                        from .chromadb_win11_config import get_win11_chromadb_client
-                        self._client = get_win11_chromadb_client()
                         logger.info(f"📚 [ChromaDB] Windows 11优化配置初始化完成 (构建号: {platform.version()})")
                     else:
-                        # Windows 10 或更老版本，使用兼容配置
-                        from .chromadb_win10_config import get_win10_chromadb_client
-                        self._client = get_win10_chromadb_client()
                         logger.info(f"📚 [ChromaDB] Windows 10兼容配置初始化完成")
                 else:
-                    # 非Windows系统，使用标准配置
-                    settings = Settings(
-                        allow_reset=True,
-                        anonymized_telemetry=False,
-                        is_persistent=False
-                    )
-                    self._client = chromadb.Client(settings)
                     logger.info(f"📚 [ChromaDB] {system}标准配置初始化完成")
-                
+
                 self._initialized = True
             except Exception as e:
                 logger.error(f"❌ [ChromaDB] 初始化失败: {e}")
@@ -153,6 +142,33 @@ class FinancialSituationMemory:
                 # 没有DashScope密钥，禁用记忆功能
                 self.client = "DISABLED"
                 logger.warning(f"⚠️ 未找到DASHSCOPE_API_KEY，记忆功能已禁用")
+                logger.info(f"💡 系统将继续运行，但不会保存或检索历史记忆")
+        elif self.llm_provider == "qianfan":
+            # 千帆（文心一言）embedding配置
+            # 千帆目前没有独立的embedding API，使用阿里百炼作为降级选项
+            dashscope_key = os.getenv('DASHSCOPE_API_KEY')
+            if dashscope_key:
+                try:
+                    # 使用阿里百炼嵌入服务作为千帆的embedding解决方案
+                    import dashscope
+                    from dashscope import TextEmbedding
+
+                    dashscope.api_key = dashscope_key
+                    self.embedding = "text-embedding-v3"
+                    self.client = None
+                    logger.info(f"💡 千帆使用阿里百炼嵌入服务")
+                except ImportError as e:
+                    logger.error(f"❌ DashScope包未安装: {e}")
+                    self.client = "DISABLED"
+                    logger.warning(f"⚠️ 千帆记忆功能已禁用")
+                except Exception as e:
+                    logger.error(f"❌ 千帆嵌入初始化失败: {e}")
+                    self.client = "DISABLED"
+                    logger.warning(f"⚠️ 千帆记忆功能已禁用")
+            else:
+                # 没有DashScope密钥，禁用记忆功能
+                self.client = "DISABLED"
+                logger.warning(f"⚠️ 千帆未找到DASHSCOPE_API_KEY，记忆功能已禁用")
                 logger.info(f"💡 系统将继续运行，但不会保存或检索历史记忆")
         elif self.llm_provider == "deepseek":
             # 检查是否强制使用OpenAI嵌入
@@ -382,6 +398,7 @@ class FinancialSituationMemory:
 
         if (self.llm_provider == "dashscope" or
             self.llm_provider == "alibaba" or
+            self.llm_provider == "qianfan" or
             (self.llm_provider == "google" and self.client is None) or
             (self.llm_provider == "deepseek" and self.client is None) or
             (self.llm_provider == "openrouter" and self.client is None)):

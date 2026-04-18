@@ -195,7 +195,14 @@ def run_stock_analysis(stock_symbol, analysis_date, analysts, research_depth, ll
     if TOKEN_TRACKING_ENABLED:
         estimated_input = 2000 * len(analysts)  # 估算每个分析师2000个输入token
         estimated_output = 1000 * len(analysts)  # 估算每个分析师1000个输出token
-        estimated_cost = token_tracker.estimate_cost(llm_provider, llm_model, estimated_input, estimated_output)
+        estimated_cost_result = token_tracker.estimate_cost(llm_provider, llm_model, estimated_input, estimated_output)
+
+        # estimate_cost 返回 tuple (cost, currency)
+        if isinstance(estimated_cost_result, tuple):
+            estimated_cost, currency = estimated_cost_result
+        else:
+            estimated_cost = estimated_cost_result
+            currency = "CNY"
 
         update_progress(f"💰 预估分析成本: ¥{estimated_cost:.4f}")
 
@@ -230,8 +237,8 @@ def run_stock_analysis(stock_symbol, analysis_date, analysts, research_depth, ll
         if research_depth == 1:  # 1级 - 快速分析
             config["max_debate_rounds"] = 1
             config["max_risk_discuss_rounds"] = 1
-            # 保持内存功能启用，因为内存操作开销很小但能显著提升分析质量
-            config["memory_enabled"] = True
+            # 禁用记忆以加速
+            config["memory_enabled"] = False
 
             # 统一使用在线工具，避免离线工具的各种问题
             config["online_tools"] = True  # 所有市场都使用统一工具
@@ -275,7 +282,7 @@ def run_stock_analysis(stock_symbol, analysis_date, analysts, research_depth, ll
             config["online_tools"] = True
             if llm_provider == "dashscope":
                 config["quick_think_llm"] = "qwen-plus"
-                config["deep_think_llm"] = "qwen-max"
+                config["deep_think_llm"] = "qwen3-max"
             elif llm_provider == "deepseek":
                 config["quick_think_llm"] = "deepseek-chat"
                 config["deep_think_llm"] = "deepseek-chat"
@@ -286,7 +293,7 @@ def run_stock_analysis(stock_symbol, analysis_date, analysts, research_depth, ll
             config["online_tools"] = True
             if llm_provider == "dashscope":
                 config["quick_think_llm"] = "qwen-plus"
-                config["deep_think_llm"] = "qwen-max"
+                config["deep_think_llm"] = "qwen3-max"
             elif llm_provider == "deepseek":
                 config["quick_think_llm"] = "deepseek-chat"
                 config["deep_think_llm"] = "deepseek-chat"
@@ -296,8 +303,8 @@ def run_stock_analysis(stock_symbol, analysis_date, analysts, research_depth, ll
             config["memory_enabled"] = True
             config["online_tools"] = True
             if llm_provider == "dashscope":
-                config["quick_think_llm"] = "qwen-max"
-                config["deep_think_llm"] = "qwen-max"
+                config["quick_think_llm"] = "qwen3-max"
+                config["deep_think_llm"] = "qwen3-max"
             elif llm_provider == "deepseek":
                 config["quick_think_llm"] = "deepseek-chat"
                 config["deep_think_llm"] = "deepseek-chat"
@@ -307,6 +314,22 @@ def run_stock_analysis(stock_symbol, analysis_date, analysts, research_depth, ll
             config["backend_url"] = "https://dashscope.aliyuncs.com/api/v1"
         elif llm_provider == "deepseek":
             config["backend_url"] = "https://api.deepseek.com"
+        elif llm_provider == "qianfan":
+            # 千帆（文心一言）配置
+            config["backend_url"] = "https://aip.baidubce.com"
+            # 根据研究深度设置千帆模型
+            if research_depth <= 2:  # 快速和基础分析
+                config["quick_think_llm"] = "ernie-3.5-8k"
+                config["deep_think_llm"] = "ernie-3.5-8k"
+            elif research_depth <= 4:  # 标准和深度分析
+                config["quick_think_llm"] = "ernie-3.5-8k"
+                config["deep_think_llm"] = "ernie-4.0-turbo-8k"
+            else:  # 全面分析
+                config["quick_think_llm"] = "ernie-4.0-turbo-8k"
+                config["deep_think_llm"] = "ernie-4.0-turbo-8k"
+            
+            logger.info(f"🤖 [千帆] 快速模型: {config['quick_think_llm']}")
+            logger.info(f"🤖 [千帆] 深度模型: {config['deep_think_llm']}")
         elif llm_provider == "google":
             # Google AI不需要backend_url，使用默认的OpenAI格式
             config["backend_url"] = "https://api.openai.com/v1"
@@ -478,6 +501,9 @@ def run_stock_analysis(stock_symbol, analysis_date, analysts, research_depth, ll
             if usage_record:
                 update_progress(f"💰 记录使用成本: ¥{usage_record.cost:.4f}")
 
+        # 从决策中提取模型信息
+        model_info = decision.get('model_info', 'Unknown') if isinstance(decision, dict) else 'Unknown'
+
         results = {
             'stock_symbol': stock_symbol,
             'analysis_date': analysis_date,
@@ -485,6 +511,7 @@ def run_stock_analysis(stock_symbol, analysis_date, analysts, research_depth, ll
             'research_depth': research_depth,
             'llm_provider': llm_provider,
             'llm_model': llm_model,
+            'model_info': model_info,  # 🔥 添加模型信息字段
             'state': state,
             'decision': decision,
             'success': True,
@@ -518,6 +545,42 @@ def run_stock_analysis(stock_symbol, analysis_date, analysts, research_depth, ll
                        'success': True,
                        'event_type': 'web_analysis_complete'
                    })
+
+        # 保存分析报告到本地和MongoDB
+        try:
+            update_progress("💾 正在保存分析报告...")
+            from .report_exporter import save_analysis_report, save_modular_reports_to_results_dir
+            
+            # 1. 保存分模块报告到本地目录
+            logger.info(f"📁 [本地保存] 开始保存分模块报告到本地目录")
+            local_files = save_modular_reports_to_results_dir(results, stock_symbol)
+            if local_files:
+                logger.info(f"✅ [本地保存] 已保存 {len(local_files)} 个本地报告文件")
+                for module, path in local_files.items():
+                    logger.info(f"  - {module}: {path}")
+            else:
+                logger.warning(f"⚠️ [本地保存] 本地报告文件保存失败")
+            
+            # 2. 保存分析报告到MongoDB
+            logger.info(f"🗄️ [MongoDB保存] 开始保存分析报告到MongoDB")
+            save_success = save_analysis_report(
+                stock_symbol=stock_symbol,
+                analysis_results=results
+            )
+            
+            if save_success:
+                logger.info(f"✅ [MongoDB保存] 分析报告已成功保存到MongoDB")
+                update_progress("✅ 分析报告已保存到数据库和本地文件")
+            else:
+                logger.warning(f"⚠️ [MongoDB保存] MongoDB报告保存失败")
+                if local_files:
+                    update_progress("✅ 本地报告已保存，但数据库保存失败")
+                else:
+                    update_progress("⚠️ 报告保存失败，但分析已完成")
+                
+        except Exception as save_error:
+            logger.error(f"❌ [报告保存] 保存分析报告时发生错误: {str(save_error)}")
+            update_progress("⚠️ 报告保存出错，但分析已完成")
 
         update_progress("✅ 分析成功完成！")
         return results
@@ -658,18 +721,33 @@ def format_analysis_results(results):
         'final_trade_decision'      # 最终交易决策
     ]
     
+    # 添加调试信息
+    logger.debug(f"🔍 [格式化调试] 原始state中的键: {list(state.keys())}")
+    for key in state.keys():
+        if isinstance(state[key], str):
+            logger.debug(f"🔍 [格式化调试] {key}: 字符串长度 {len(state[key])}")
+        elif isinstance(state[key], dict):
+            logger.debug(f"🔍 [格式化调试] {key}: 字典，包含键 {list(state[key].keys())}")
+        else:
+            logger.debug(f"🔍 [格式化调试] {key}: {type(state[key])}")
+
     for key in analysis_keys:
         if key in state:
             # 对文本内容进行中文化处理
             content = state[key]
             if isinstance(content, str):
                 content = translate_analyst_labels(content)
+                logger.debug(f"🔍 [格式化调试] 处理字符串字段 {key}: 长度 {len(content)}")
+            elif isinstance(content, dict):
+                logger.debug(f"🔍 [格式化调试] 处理字典字段 {key}: 包含键 {list(content.keys())}")
             formatted_state[key] = content
         elif key == 'risk_assessment':
             # 特殊处理：从 risk_debate_state 生成 risk_assessment
             risk_assessment = extract_risk_assessment(state)
             if risk_assessment:
                 formatted_state[key] = risk_assessment
+        else:
+            logger.debug(f"🔍 [格式化调试] 缺失字段: {key}")
     
     return {
         'stock_symbol': results['stock_symbol'],
