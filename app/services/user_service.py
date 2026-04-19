@@ -346,6 +346,7 @@ class UserService:
                     id=str(user.id),
                     username=user.username,
                     email=user.email,
+                    is_admin=user.is_admin,
                     is_active=user.is_active,
                     is_verified=user.is_verified,
                     created_at=user.created_at,

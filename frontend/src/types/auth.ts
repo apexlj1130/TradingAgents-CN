@@ -80,6 +80,34 @@ export interface ResetPasswordForm {
   captcha?: string
 }
 
+export interface AdminUser {
+  id: string
+  username: string
+  email: string
+  is_admin: boolean
+  is_active: boolean
+  is_verified: boolean
+  created_at: string
+  last_login?: string
+}
+
+export interface CreateUserForm {
+  username: string
+  email: string
+  password: string
+  is_admin?: boolean
+}
+
+export interface AdminResetPasswordForm {
+  username: string
+  new_password: string
+}
+
+export interface UserListResponse {
+  users: AdminUser[]
+  total: number
+}
+
 // 用户权限信息
 export interface UserPermissions {
   permissions: string[]

@@ -268,7 +268,8 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/Settings/ConfigManagement.vue'),
         meta: {
           title: '配置管理',
-          requiresAuth: true
+          requiresAuth: true,
+          requiresAdmin: true
         }
       },
       {
@@ -277,7 +278,8 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/System/DatabaseManagement.vue'),
         meta: {
           title: '数据库管理',
-          requiresAuth: true
+          requiresAuth: true,
+          requiresAdmin: true
         }
       },
       {
@@ -286,7 +288,8 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/System/OperationLogs.vue'),
         meta: {
           title: '操作日志',
-          requiresAuth: true
+          requiresAuth: true,
+          requiresAdmin: true
         }
       },
       {
@@ -295,7 +298,8 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/System/LogManagement.vue'),
         meta: {
           title: '系统日志',
-          requiresAuth: true
+          requiresAuth: true,
+          requiresAdmin: true
         }
       },
       {
@@ -304,7 +308,8 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/System/MultiSourceSync.vue'),
         meta: {
           title: '多数据源同步',
-          requiresAuth: true
+          requiresAuth: true,
+          requiresAdmin: true
         }
       },
       {
@@ -313,7 +318,8 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/Settings/CacheManagement.vue'),
         meta: {
           title: '缓存管理',
-          requiresAuth: true
+          requiresAuth: true,
+          requiresAdmin: true
         }
       },
       {
@@ -322,7 +328,8 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/Settings/UsageStatistics.vue'),
         meta: {
           title: '使用统计',
-          requiresAuth: true
+          requiresAuth: true,
+          requiresAdmin: true
         }
       },
       {
@@ -331,7 +338,18 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/System/SchedulerManagement.vue'),
         meta: {
           title: '定时任务',
-          requiresAuth: true
+          requiresAuth: true,
+          requiresAdmin: true
+        }
+      },
+      {
+        path: 'users',
+        name: 'UserManagement',
+        component: () => import('@/views/System/UserManagement.vue'),
+        meta: {
+          title: '用户管理',
+          requiresAuth: true,
+          requiresAdmin: true
         }
       }
     ]
@@ -443,7 +461,11 @@ router.beforeEach(async (to, _from, next) => {
     return
   }
 
-
+  if (to.meta.requiresAdmin && !authStore.isAdmin) {
+    ElMessage.error('权限不足')
+    next('/dashboard')
+    return
+  }
 
   // 如果已登录且访问登录页，重定向到仪表板
   if (authStore.isAuthenticated && to.name === 'Login') {

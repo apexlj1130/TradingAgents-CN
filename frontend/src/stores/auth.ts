@@ -51,15 +51,18 @@ export const useAuthStore = defineStore('auth', {
       localStorage.removeItem('user-info')
     }
 
+    const storedUser = validToken ? (useStorage('user-info', null).value || null) : null
+    const storedIsAdmin = !!storedUser?.is_admin
+
     return {
       isAuthenticated: !!validToken,
       token: validToken,
       refreshToken: validRefreshToken,
 
-      user: validToken ? (useStorage('user-info', null).value || null) : null,
+      user: storedUser,
 
-      permissions: [],
-      roles: [],
+      permissions: storedIsAdmin ? ['*'] : [],
+      roles: storedIsAdmin ? ['admin'] : (storedUser ? ['user'] : []),
 
       loginLoading: false,
       redirectPath: '/'
@@ -79,7 +82,7 @@ export const useAuthStore = defineStore('auth', {
     
     // 是否为管理员
     isAdmin(): boolean {
-      return this.roles.includes('admin')
+      return !!this.user?.is_admin || this.roles.includes('admin')
     },
     
     // 检查权限
@@ -109,6 +112,23 @@ export const useAuthStore = defineStore('auth', {
   },
 
   actions: {
+    applyUserAccess(user?: User | null) {
+      if (!user) {
+        this.permissions = []
+        this.roles = []
+        return
+      }
+
+      if (user.is_admin) {
+        this.permissions = ['*']
+        this.roles = ['admin']
+        return
+      }
+
+      this.permissions = []
+      this.roles = ['user']
+    },
+
     // 设置认证信息
     setAuthInfo(token: string, refreshToken?: string, user?: User) {
       this.token = token
@@ -120,6 +140,7 @@ export const useAuthStore = defineStore('auth', {
 
       if (user) {
         this.user = user
+        this.applyUserAccess(user)
       }
 
       // 手动保存到localStorage（确保持久化）
@@ -197,10 +218,6 @@ export const useAuthStore = defineStore('auth', {
 
           // 设置认证信息
           this.setAuthInfo(access_token, refresh_token, user)
-
-          // 开源版admin用户拥有所有权限
-          this.permissions = ['*']
-          this.roles = ['admin']
 
           // 同步用户偏好设置到 appStore
           this.syncUserPreferencesToAppStore()
@@ -320,6 +337,7 @@ export const useAuthStore = defineStore('auth', {
 
         if (response.success) {
           this.user = response.data
+          this.applyUserAccess(response.data)
           console.log('✅ 用户信息获取成功:', this.user?.username)
 
           // 同步用户偏好设置到 appStore
@@ -337,10 +355,9 @@ export const useAuthStore = defineStore('auth', {
       }
     },
     
-    // 开源版不需要权限检查，admin拥有所有权限
+    // 根据当前用户信息推导权限
     async fetchUserPermissions() {
-      this.permissions = ['*']
-      this.roles = ['admin']
+      this.applyUserAccess(this.user)
       return true
     },
     
@@ -351,6 +368,7 @@ export const useAuthStore = defineStore('auth', {
 
         if (response.success) {
           this.user = { ...this.user!, ...response.data }
+          this.applyUserAccess(this.user)
 
           // 同步用户偏好设置到 appStore
           this.syncUserPreferencesToAppStore()

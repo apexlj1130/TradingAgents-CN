@@ -5,7 +5,10 @@ import type {
   LoginResponse, 
   RefreshTokenResponse,
   User,
-  ChangePasswordForm
+  ChangePasswordForm,
+  CreateUserForm,
+  AdminResetPasswordForm,
+  UserListResponse
 } from '@/types/auth'
 
 export const authApi = {
@@ -50,6 +53,26 @@ export const authApi = {
   // 重置密码
   resetPassword: (email: string) =>
     ApiClient.post('/api/auth/reset-password', { email }),
+
+  // 管理员：获取用户列表
+  listUsers: () =>
+    ApiClient.get<UserListResponse>('/api/auth/users'),
+
+  // 管理员：创建用户
+  createUser: (data: CreateUserForm) =>
+    ApiClient.post('/api/auth/create-user', data),
+
+  // 管理员：重置密码
+  adminResetPassword: (data: AdminResetPasswordForm) =>
+    ApiClient.post('/api/auth/reset-password', data),
+
+  // 管理员：启用用户
+  activateUser: (username: string) =>
+    ApiClient.post(`/api/auth/users/${encodeURIComponent(username)}/activate`),
+
+  // 管理员：禁用用户
+  deactivateUser: (username: string) =>
+    ApiClient.post(`/api/auth/users/${encodeURIComponent(username)}/deactivate`),
 
   // 验证邮箱
   verifyEmail: (token: string) =>

@@ -502,3 +502,56 @@ async def list_users(
     except Exception as e:
         logger.error(f"获取用户列表失败: {e}")
         raise HTTPException(status_code=500, detail=f"获取用户列表失败: {str(e)}")
+
+@router.post("/users/{username}/activate")
+async def activate_user(
+    username: str,
+    user: dict = Depends(get_current_user)
+):
+    """激活用户（管理员操作）"""
+    try:
+        if not user.get("is_admin", False):
+            raise HTTPException(status_code=403, detail="权限不足")
+
+        success = await user_service.activate_user(username)
+        if not success:
+            raise HTTPException(status_code=404, detail="用户不存在")
+
+        return {
+            "success": True,
+            "data": {},
+            "message": f"用户 {username} 已启用"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"启用用户失败: {e}")
+        raise HTTPException(status_code=500, detail=f"启用用户失败: {str(e)}")
+
+@router.post("/users/{username}/deactivate")
+async def deactivate_user(
+    username: str,
+    user: dict = Depends(get_current_user)
+):
+    """禁用用户（管理员操作）"""
+    try:
+        if not user.get("is_admin", False):
+            raise HTTPException(status_code=403, detail="权限不足")
+
+        if user.get("username") == username:
+            raise HTTPException(status_code=400, detail="不能禁用当前登录管理员")
+
+        success = await user_service.deactivate_user(username)
+        if not success:
+            raise HTTPException(status_code=404, detail="用户不存在")
+
+        return {
+            "success": True,
+            "data": {},
+            "message": f"用户 {username} 已禁用"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"禁用用户失败: {e}")
+        raise HTTPException(status_code=500, detail=f"禁用用户失败: {str(e)}")
